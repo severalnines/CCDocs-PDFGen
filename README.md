@@ -9,7 +9,7 @@ The Linux Distro used for development is **Ubuntu 24.04  LTS (Noble Numbat)**. P
 ### Preparing your envionrment requires setup your active working directory for this CC -> PDF generator project.
 #### Clone the git repository
 ```bash 
-git clone git@github.com:geekgogie/CCDocs-PDFGen.git 
+git clone git@github.com:severalnines/CCDocs-PDFGen.git
 ```
 
 #### Install python required packages
