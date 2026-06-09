@@ -1,0 +1,10 @@
+build
+sphinx/build
+sphinx/src/*
+sphinx/log/*
+mkdocs
+__pycache__/
+*.pyc
+*.pyo
+venv_ccpdf_doc
+log
