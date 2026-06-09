@@ -1,0 +1,12 @@
+mkdocs
+mkdocs-material
+mkdocs-glightbox
+mkdocs-autorefs
+mike
+sphinx
+sphinx-design
+myst-parser
+sphinx-book-theme
+linkify-it-py
+pyyaml
+sphinx-design

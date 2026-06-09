@@ -1,0 +1,5 @@
+# ${title}
+
+```{toctree}
+
+${files}

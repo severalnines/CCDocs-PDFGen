@@ -1,0 +1,13 @@
+getting-started:
+  - getting-started
+  - overview/index
+  - installation/index
+  - quickstart
+  - tutorials/index
+
+getting-started/overview:
+  - how-it-works
+  - supported-databases
+  - key-features
+  - requirements
+  - faqs
