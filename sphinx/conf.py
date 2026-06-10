@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = "ClusterControl Documentation"
 author = "Severalnines"
-release = "2.3.4"
+release = "2.4.0"
 
 extensions = [
     "myst_parser",
@@ -34,6 +34,7 @@ latex_engine = "xelatex"
 latex_elements = {
     "papersize": "a4paper",
     "pointsize": "11pt",
+    "extraclassoptions": "openany,oneside",
     "tableofcontents": r"""
          \clearpage
          \tableofcontents
@@ -47,7 +48,7 @@ latex_elements = {
 
         \noindent
         This is the ClusterControl Reference Manual. It documents ClusterControl
-        through version 2.3.4, including installation, configuration, cluster
+        through version 2.4.0, including installation, configuration, cluster
         deployment, monitoring, and management features.
 
         \vspace{1em}
