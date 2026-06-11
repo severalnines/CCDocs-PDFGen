@@ -52,6 +52,27 @@ import helper
 src_dir  = Path(os.environ['CC_SPHINX_SRC_DIR'])
 log_file = Path(os.environ['CC_LOG_FILE'])
 
+# Matches a TAB-SET container: an info admonition with an explicit EMPTY title,
+#   !!! info ""
+# Only this exact form is treated as a transparent wrapper for tabbed content.
+INFO_TABSET_RE = re.compile(r'^!!![ \t]+info[ \t]+""[ \t]*\r?$',
+                            re.IGNORECASE | re.MULTILINE)
+
+# Matches a DEFAULT-title info admonition with NO quotes at all, e.g.
+#   !!! info   /   !!! Info
+# MkDocs renders these with the auto-title "Info" -> treat as a real callout.
+INFO_DEFAULT_RE = re.compile(r'^!!![ \t]+info[ \t]*\r?$',
+                             re.IGNORECASE | re.MULTILINE)
+
+# Matches a TITLED info admonition, capturing the title text, e.g.:
+#   !!! info "Some Title"
+# These are treated as real callouts (-> {admonition} with :class: info).
+INFO_RE_WITH_TITLE = re.compile(r'^!!![ \t]+info[ \t]+"([^"]+)"[ \t]*\r?$',
+                                re.IGNORECASE | re.MULTILINE)
+
+# All info-admonition opener patterns, used for quick file-level pre-checks.
+INFO_PATTERNS = (INFO_TABSET_RE, INFO_DEFAULT_RE, INFO_RE_WITH_TITLE)
+
 
 def convert_badge(text):
     text = re.sub(r'\^==Enterprise==\^', '{bdg-primary}`Enterprise`', text)
@@ -108,9 +129,63 @@ def convert_info_block(block_lines):
     return result
 
 
+def collect_block_lines(lines, start):
+    """Collect the indented/blank lines that belong to an admonition opened at `start`.
+
+    Returns (block_lines, next_index) where next_index is the first line that is
+    no longer part of the block.
+    """
+    block_lines = []
+    j = start + 1
+    while j < len(lines) and (lines[j].startswith('    ') or lines[j].strip() == ''):
+        block_lines.append(lines[j])
+        j += 1
+    return block_lines, j
+
+
+def convert_titled_content(lines):
+    """De-indent a titled admonition body (4-space base) and convert badges.
+
+    Preserves deeper nesting and blank lines; trims surrounding blank lines.
+    """
+    base_indent = 4
+    result = []
+    for line in lines:
+        if not line.strip():
+            result.append('')
+            continue
+        if len(line) >= base_indent and line[:base_indent].isspace():
+            dedented = line[base_indent:]
+        else:
+            dedented = line.lstrip(' ')
+        result.append(convert_badge(dedented.rstrip()))
+    while result and not result[0]:
+        result.pop(0)
+    while result and not result[-1]:
+        result.pop()
+    return result
+
+
+def convert_info_block_with_title(title, block_lines):
+    """Convert a TITLED MkDocs info admonition (!!! info "Some Title") into a
+    MyST {admonition} directive that preserves the title and keeps info styling:
+
+        :::{admonition} Some Title
+        :class: info
+
+        body content...
+        :::
+    """
+    result = [f':::{{admonition}} {title}', ':class: info', '']
+    result.extend(convert_titled_content(block_lines))
+    result.append(':::')
+    result.append('')
+    return result
+
+
 def process_file(md_file):
     content = md_file.read_text()
-    if '!!! info ""' not in content:
+    if not any(p.search(content) for p in INFO_PATTERNS):
         return False
 
     lines = content.split('\n')
@@ -120,16 +195,12 @@ def process_file(md_file):
 
     while i < len(lines):
         line = lines[i]
+        stripped = line.rstrip()
+        title_match = INFO_RE_WITH_TITLE.match(stripped)
 
-        if line.rstrip() == '!!! info ""':
-            # Collect all indented/blank lines belonging to this block
-            block_lines = []
-            j = i + 1
-            while j < len(lines) and (lines[j].startswith('    ') or lines[j].strip() == ''):
-                block_lines.append(lines[j])
-                j += 1
-
-            # Only convert blocks that actually contain === tab headers
+        if INFO_TABSET_RE.match(stripped):
+            # !!! info ""  ->  tab-set wrapper (only when it actually holds === tabs)
+            block_lines, j = collect_block_lines(lines, i)
             has_tabs = any(re.match(r'^ {4}=== "', l) for l in block_lines)
             if has_tabs:
                 result.extend(convert_info_block(block_lines))
@@ -138,6 +209,22 @@ def process_file(md_file):
             else:
                 result.append(line)
                 i += 1
+        elif title_match:
+            # !!! info "Some Title"  ->  {admonition} Some Title :class: info
+            block_lines, j = collect_block_lines(lines, i)
+            result.extend(convert_info_block_with_title(title_match.group(1), block_lines))
+            i = j
+            changed = True
+        elif INFO_DEFAULT_RE.match(stripped):
+            # !!! info / !!! Info (no quotes)  ->  {admonition} Info :class: info,
+            # unless it happens to hold tabs, in which case treat it as a tab-set.
+            block_lines, j = collect_block_lines(lines, i)
+            if any(re.match(r'^ {4}=== "', l) for l in block_lines):
+                result.extend(convert_info_block(block_lines))
+            else:
+                result.extend(convert_info_block_with_title('Info', block_lines))
+            i = j
+            changed = True
         else:
             result.append(line)
             i += 1
@@ -150,7 +237,8 @@ def process_file(md_file):
 
 converted_files = 0
 for md_file in sorted(src_dir.rglob('*.md')):
-    if '!!! info ""' not in md_file.read_text():
+    text = md_file.read_text()
+    if not any(p.search(text) for p in INFO_PATTERNS):
         continue
     helper.log(f'  Processing: {md_file}', log_file)
     if process_file(md_file):

@@ -11,11 +11,18 @@ Each helper script is called with one positional argument:
 
 Usage:
   python sphinx/tools/bin/md_to_sphinx.py
+  python sphinx/tools/bin/md_to_sphinx.py --run-only-with="03_convert_infotab"
+
+  --run-only-with=NAME  Run only the helper script whose filename matches NAME
+                        (with or without the .sh extension) and skip all others,
+                        instead of looping over every helper.
 """
 
+import argparse
 import configparser
 import os
 import subprocess
+import pprint,json
 import sys
 import helper
 from pathlib import Path
@@ -33,7 +40,22 @@ def load_config(config_file: str):
     return cfg
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run MkDocs->Sphinx/MyST helper scripts under sphinx/tools/helpers/."
+    )
+    parser.add_argument(
+        "--run-only-with",
+        metavar="NAME",
+        default=None,
+        help="Run only the helper whose filename matches NAME (with or without "
+             "the .sh extension), skipping all other helpers.",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
     CONF_DIR = BASE_DIR.parent / "conf"
     HELPERS_DIR = BASE_DIR.parent / "helpers"
@@ -56,7 +78,7 @@ def main():
     ).expanduser()
     cc_log_file = Path(
         cfg.get(ini_section, "CC_LOG_FILE",
-                fallback=f"{home}/cc-manual-gen/sphinx/logs/pdf_gen.log")
+                fallback=f"{home}/cc-manual-gen/sphinx/tools/logs/pdf_gen.log")
     ).expanduser()
 
     cc_log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -83,9 +105,26 @@ def main():
         helper.log("No helper scripts found in helpers/. Nothing to do.", cc_log_file)
         sys.exit(0)
 
-    helper.log(f"Found {len(scripts)} helper script(s). Running in order...", cc_log_file)
+    if args.run_only_with:
+        target = args.run_only_with
+        if target.endswith(".sh"):
+            target = target[:-3]
+        scripts = [s for s in scripts if s.stem == target]
+        if not scripts:
+            helper.log(
+                f"ERROR: No helper script matching '{args.run_only_with}' found in {HELPERS_DIR}.",
+                cc_log_file, error=True)
+            sys.exit(1)
+        helper.log(f"Running only the helper matching '{args.run_only_with}'...", cc_log_file)
+    else:
+        helper.log(f"Found {len(scripts)} helper script(s). Running in order...", cc_log_file)
 
     errors = 0
+    
+    # pprint.pprint(scripts)
+    # print(json.dumps([str(s) for s in scripts], indent=2))
+    # sys.exit(0)
+    
     for script in scripts:
         helper.log(f"[RUNNING HELPER SCRIPT:] {script.name}", cc_log_file)
         result = subprocess.run(
