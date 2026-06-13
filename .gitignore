@@ -1,6 +1,7 @@
 build
 sphinx/build
 sphinx/src/*
+sphinx/src-raw
 sphinx/log/*
 mkdocs
 __pycache__/

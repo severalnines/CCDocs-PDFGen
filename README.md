@@ -207,6 +207,20 @@ For more info, checkout the header of this role script
 Enables the *.md scripts to be fully compatible with sphinx to get the desired output and formatting once the PDF generation starts. It simply discovers and runs all bash helper scripts under `sphinx/tools/helpers/` in
 sorted order. Each helper is responsible for converting a specific set of MkDocs tags or syntax that is incompatible with Sphinx/MyST.
 
+The `md_to_sphinx.py` role script has the capability to run only one helper. Currently, only one helper is allowed to be executed apart from reading and running all helpers. If you want to generate or test a new helper, simply do the following:
+```bash
+python tools/bin/md_to_sphinx.py --run-only-with=<your-helper-script-name>
+```
+
+where `<your-helper-script-name>` can be with `*.sh` or just the basename. For example, running only helper `02_convert_mermaid.sh` would be,
+```bash
+python tools/bin/md_to_sphinx.py --run-only-with=02_convert_mermaid.sh
+
+## or
+
+python tools/bin/md_to_sphinx.py --run-only-with=02_convert_mermaid
+```
+
 Optionally, if you desire to exclude the helper you have in `sphinx/tools/helpers/`, simply do not prefix it with a number so that upon running or scanning of helper scripts, it shall not be read. This is the way how to disable it.
 
 ### Logging

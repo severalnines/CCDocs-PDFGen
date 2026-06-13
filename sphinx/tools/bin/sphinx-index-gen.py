@@ -274,9 +274,7 @@ def main():
 
     #pprint.pprint(top_level_slugs)
     # print(json.dumps(top_level_slugs, indent=2))
-    # sys.exit(0)
-    
-    
+    # sys.exit(0)    
     
     # ── write root CC_SPHINX_SRC_DIR/index.md ───────────────────────────────
     sphinx_src_dir.mkdir(parents=True, exist_ok=True)
