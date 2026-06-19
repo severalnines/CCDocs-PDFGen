@@ -29,6 +29,7 @@ import configparser
 import os
 import re
 import sys
+import helper
 from pathlib import Path
 
 try:
@@ -64,16 +65,6 @@ _IgnoreUnknownTagsLoader.add_multi_constructor("", _ignore_unknown)
 
 class ConfigError(Exception):
     pass
-
-
-def load_config(config_file: str):
-    """Load and return configuration from an INI file."""
-    if not os.path.exists(config_file):
-        raise ConfigError(f"Configuration file '{config_file}' not found!")
-    cfg = configparser.ConfigParser()
-    cfg.read(config_file)
-    return cfg
-
 
 # ---------------------------------------------------------------------------
 # Nav transformation helpers
@@ -114,27 +105,38 @@ def _is_url(value: str) -> bool:
     return value.startswith(("http://", "https://"))
 
 
-def transform_nav(nav_item):
+def transform_nav(nav_item, patterns=None, parent_path=""):
     """Recursively transform a mkdocs nav item into the cleaned structure.
+
+    `patterns` is the list of ignore patterns loaded from ignore_file_list.txt.
+    A directory-style pattern (e.g. ``release-notes/*``) drops both the matching
+    parent section AND any matching child leaf. `parent_path` accumulates the
+    section slugs so a section can be matched as a directory path.
 
     Return values:
       str   – a bare .md path  (title has been stripped)
       dict  – {slug: [children]}  for a section/directory
       list  – a sequence of the above
-      None  – item should be omitted from output (URL, empty section, etc.)
+      None  – item should be omitted from output (URL, ignored, empty, etc.)
     """
+    patterns = patterns or []
+
     # ── list: recurse into every element ────────────────────────────────────
     if isinstance(nav_item, list):
         out = []
         for item in nav_item:
-            transformed = transform_nav(item)
+            transformed = transform_nav(item, patterns, parent_path)
             if transformed is not None:
                 out.append(transformed)
         return out if out else None
 
-    # ── bare string: keep only .md paths ────────────────────────────────────
+    # ── bare string: keep only .md paths, skip ignored ones ─────────────────
     if isinstance(nav_item, str):
-        return nav_item if nav_item.endswith(".md") else None
+        if not nav_item.endswith(".md"):
+            return None
+        if helper.is_ignored(nav_item, patterns):
+            return None
+        return nav_item
 
     # ── dict: MkDocs nav dicts always carry exactly one key ─────────────────
     if isinstance(nav_item, dict):
@@ -142,14 +144,20 @@ def transform_nav(nav_item):
 
             # Leaf – "Title: path/file.md"  →  just the path
             if isinstance(value, str):
-                if value.endswith(".md"):
-                    return value      # drop the title, keep the path
-                return None           # URL or unknown scalar – skip
+                if not value.endswith(".md"):
+                    return None       # URL or unknown scalar – skip
+                if helper.is_ignored(value, patterns):
+                    return None       # ignored child leaf
+                return value          # drop the title, keep the path
 
             # Section – "Title:\n  - ..."  →  {slug: [children]}
             if isinstance(value, list):
                 slug = title_to_slug(title)
-                children = transform_nav(value)
+                section_path = f"{parent_path}/{slug}".strip("/")
+                # Skip the WHOLE parent section if its directory is ignored.
+                if helper.is_ignored(section_path, patterns):
+                    return None
+                children = transform_nav(value, patterns, section_path)
                 if children:
                     return {slug: children}
                 return None           # empty section after filtering
@@ -167,12 +175,13 @@ def main():
 
     config_file = CONF_DIR / "config.ini"
     output_file = CONF_DIR / "order-sections.yaml"
+    ignore_file_list = CONF_DIR / "ignore_file_list.txt"
 
     # ── load config.ini ──────────────────────────────────────────────────────
     try:
-        cfg = load_config(str(config_file))
-    except ConfigError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
+        cfg = helper.load_config(str(config_file))
+    except helper.ConfigError as e:
+        helper.log(f"ERROR: {e}", error=True)
         sys.exit(1)
 
     home = os.environ.get("HOME", "")
@@ -187,14 +196,20 @@ def main():
     print(f"  Output file   : {output_file}")
     print("-" * 60)
 
-    # ── validate inputs ──────────────────────────────────────────────────────
+    # validate inputs
     if not mkdocs_yml.exists():
         print(f"ERROR: mkdocs.yml not found at '{mkdocs_yml}'", file=sys.stderr)
         sys.exit(1)
 
-    # ── parse mkdocs.yml ─────────────────────────────────────────────────────
+    # parse mkdocs.yml 
     with open(mkdocs_yml, "r", encoding="utf-8") as fh:
         mkdocs_config = yaml.load(fh, Loader=_IgnoreUnknownTagsLoader)
+
+    patterns = helper.load_ignore_patterns(ignore_file_list)
+    print(f"  Ignore patterns : {len(patterns)} loaded from {ignore_file_list.name}")
+    for p in patterns:
+        print(f"      - {p}")
+    print("-" * 60)
 
     nav = mkdocs_config.get("nav", [])
     if not nav:
@@ -202,7 +217,7 @@ def main():
         sys.exit(1)
 
     # ── transform ────────────────────────────────────────────────────────────
-    transformed = transform_nav(nav)
+    transformed = transform_nav(nav, patterns)
     if not transformed:
         print("ERROR: nav transformation produced no output.", file=sys.stderr)
         sys.exit(1)

@@ -3,13 +3,4 @@
 # Lines starting with # are comments.
 # Specify only paths relative to your working directory, ideally at $HOME/cc-manual-gen/
 
-README.md
-assets/
-index.md
-javascript/
-overrides/
-stylesheets/
-versions.json
-release-notes/
-docs.md
-.gitignore
+release-notes/*
