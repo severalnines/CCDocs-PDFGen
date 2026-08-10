@@ -124,7 +124,7 @@ def process_file(md_file):
             block_lines.append(lines[j])
             j += 1
 
-        # Emit the MyST admonition, preserving the block's own indentation
+        # Emit the MyST admonition at column 0 (no indent) for proper PDF rendering
         emit = [f':::{{admonition}} {title}']
         if is_dropdown:
             emit.append(':class: dropdown')
@@ -132,7 +132,7 @@ def process_file(md_file):
         emit += convert_block_content(block_lines, content_base)
         emit += [':::']
         for e in emit:
-            result.append(f'{header_indent}{e}' if e else '')
+            result.append(e)
 
         i = j
         changed = True
