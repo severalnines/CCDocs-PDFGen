@@ -60,8 +60,8 @@ HEADER_RE_WITH_TITLE = re.compile(r'^(\s*)!!![ \t]+warning[ \t]+"([^"]+)"[ \t]*\
 
 INFO_PATTERNS = [HEADER_RE, HEADER_RE_WITH_TITLE]
 
-def convert_warning_content(lines):
-    """De-indent a titled admonition body (4-space base) and convert badges.
+def convert_warning_content(lines, indent):
+    """De-indent a titled admonition body (4-space base) and re-apply indent prefix.
 
     Preserves deeper nesting and blank lines; trims surrounding blank lines.
     """
@@ -75,7 +75,7 @@ def convert_warning_content(lines):
             dedented = line[base_indent:]
         else:
             dedented = line.lstrip(' ')
-        result.append(dedented.rstrip())
+        result.append((indent + dedented).rstrip())
 
     while result and not result[0]:
         result.pop(0)
@@ -84,12 +84,12 @@ def convert_warning_content(lines):
     return result
 
 
-def convert_warning_block_with_title(title, block_lines):
-    result = [f':::{{warning}} {title}', '']
-    res_ext = convert_warning_content(block_lines)
+def convert_warning_block_with_title(title, block_lines, indent):
+    result = [f'{indent}:::{{warning}} {title}', '']
+    res_ext = convert_warning_content(block_lines, indent)
 
     result.extend(res_ext)
-    result.append(':::')
+    result.append(f'{indent}:::')
     result.append('')
     return result
 
@@ -128,7 +128,7 @@ def process_file(md_file):
             if h_re_wtm:
                 title = h_re_wtm.group(2)
 
-            result.extend(convert_warning_block_with_title(title, block_lines))
+            result.extend(convert_warning_block_with_title(title, block_lines, header_indent))
             
             i = j
             changed = True

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = "ClusterControl Documentation"
 author = "Severalnines"
-release = "2.4.0"
+release = "2.5.0"
 
 extensions = [
     "myst_parser",

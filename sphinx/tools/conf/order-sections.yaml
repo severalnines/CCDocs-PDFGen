@@ -60,6 +60,7 @@
     - user-guide/overview/clustercontrol-gui.md
     - user-guide/overview/clustercontrol-cli.md
     - user-guide/overview/clustercontrol-rpc-api.md
+    - user-guide/overview/addons.md
   - deployment:
     - user-guide/deployment/index.md
     - user-guide/deployment/create-database-cluster.md
@@ -128,8 +129,10 @@
   - admin-guide/clustercontrol-configuration.md
   - admin-guide/securing-clustercontrol.md
   - admin-guide/redundancy-high-availability.md
+  - admin-guide/scalable-controllers-pool-with-ha.md
   - admin-guide/tuning-large-deployment.md
   - admin-guide/housekeeping.md
+  - admin-guide/usage-metering-billing.md
   - admin-guide/migrating-clustercontrol-another-server.md
   - admin-guide/uninstall-reinstall.md
 - reference-manuals:

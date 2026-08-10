@@ -40,18 +40,23 @@ SRC="$CC_SPHINX_SRC_DIR"
 OLD="administration-guide"
 NEW="admin-guide"
 
-# 1) Rename the section directory (with ALL its files) and its landing page.
-#    Guarded so a re-run is a harmless no-op.
-if [ -d "$SRC/$OLD" ] && [ ! -e "$SRC/$NEW" ]; then
-    mv "$SRC/$OLD" "$SRC/$NEW"
-    log "  Renamed directory: $OLD/ -> $NEW/"
-elif [ -d "$SRC/$NEW" ]; then
-    log "  Directory $NEW/ already exists; skipping directory rename."
+
+# Move contents from the old directory to the new one, if it exists. Basically, the
+# "$SRC/$OLD" is a wrong directory generated because of the naming convention due to kebab case
+if [ -d "$SRC/$OLD" ]; then
+    mv "$SRC/$OLD/index.md" "$SRC/$NEW/index.md"
+    log "  Moved index.md file from directory: $SRC/$OLD/ -> $SRC/$NEW/"
 fi
 
 if [ -f "$SRC/$OLD.md" ] && [ ! -e "$SRC/$NEW.md" ]; then
     mv "$SRC/$OLD.md" "$SRC/$NEW.md"
     log "  Renamed landing page: $OLD.md -> $NEW.md"
+fi
+
+# Lastly, remove the old dir
+if [ -d "$SRC/$OLD" ]; then
+    rmdir "$SRC/$OLD"
+    log "  Removed old directory: $SRC/$OLD"
 fi
 
 # 2) Fix every reference to the old name across the whole doc set (toctrees,
