@@ -105,6 +105,10 @@ latex_elements = {
         \usepackage{newunicodechar}
         \newunicodechar{🡒}{\textrm{→}}
         \newunicodechar{🙏}{} 
+        \usepackage[titles]{tocloft}
+        \setlength{\cftsecnumwidth}{2.9em}
+        \setlength{\cftsubsecindent}{3.3em}
+        \setlength{\cftsubsecnumwidth}{3.3em}
     """
 }
 

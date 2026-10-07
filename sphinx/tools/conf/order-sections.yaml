@@ -44,6 +44,9 @@
         - elasticsearch:
           - getting-started/tutorials/day-1-operations/your-first-cluster/elasticsearch/standalone-cluster.md
           - getting-started/tutorials/day-1-operations/your-first-cluster/elasticsearch/high-availability-cluster.md
+        - clickhouse:
+          - getting-started/tutorials/day-1-operations/your-first-cluster/clickhouse/standalone.md
+          - getting-started/tutorials/day-1-operations/your-first-cluster/clickhouse/replicated-cluster.md
       - getting-started/tutorials/day-1-operations/deploy-database-cluster-offline-environment.md
     - day-2-operations:
       - getting-started/tutorials/day-2-operations/deploy-failover-secondary-cluster.md
@@ -110,7 +113,7 @@
     - user-guide/integration/clustercontrol-ops-c.md
     - user-guide/integration/kubernetes.md
     - user-guide/integration/cloud-providers.md
-    - user-guide/integration/hashicorp-vault.md
+    - user-guide/integration/secrets-management.md
     - user-guide/integration/terraform-provider.md
     - user-guide/integration/ldap.md
     - user-guide/integration/notification-services.md
@@ -128,8 +131,11 @@
   - admin-guide/backup-restore.md
   - admin-guide/clustercontrol-configuration.md
   - admin-guide/securing-clustercontrol.md
-  - admin-guide/redundancy-high-availability.md
-  - admin-guide/scalable-controllers-pool-with-ha.md
+  - redundancy-high-availability:
+    - admin-guide/redundancy-high-availability.md
+    - admin-guide/scalable-controllers-pool.md
+    - admin-guide/clustercontrol-replication.md
+  - admin-guide/reference-architecture.md
   - admin-guide/tuning-large-deployment.md
   - admin-guide/housekeeping.md
   - admin-guide/usage-metering-billing.md
