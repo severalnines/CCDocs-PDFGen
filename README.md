@@ -244,7 +244,7 @@ $ python tools/bin/md_to_sphinx.py
 $ cc_gen_pdf
 ## or use if version has to be specified where <major-base-version> is 2.4.0 for the 2.4.x release or 2.5.0 for the 2.5.x release
 $ cc_gen_pdf --for-version=<major-base-version>
-## Create the web server to view the PDF generated. Make sure to go to http://<hostname>>/clustercontrol.pdf
+## Create the web server to view the PDF generated to verify if everything looks good. Make sure to go to http://<hostname>>/clustercontrol.pdf
 $ cc_create_http_server
 ```
 
