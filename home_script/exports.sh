@@ -12,12 +12,33 @@ cc_set_manual_env() {
 
 # Now cc_gen_pdf can call it directly
 cc_gen_pdf() {
-    cc_set_manual_env && \
-    cd "${CC_MAN_SPHINX_DIR}" && \
+    local version="" arg
+    for arg in "$@"; do
+        case "$arg" in
+            --for-version=*) version="${arg#--for-version=}" ;;
+            *) echo "Unknown option: $arg" >&2; return 1 ;;
+        esac
+    done
+
+    cc_set_manual_env || return 1
+    cd "${CC_MAN_SPHINX_DIR}" || return 1
+
+    local rc=0 conf="conf.py" backup=""
+    if [ -n "$version" ]; then
+        backup="$(mktemp)" && cp "$conf" "$backup" || { cd - >/dev/null; return 1; }
+        sed -i.bak -E "s/^release = \".*\"/release = \"${version}\"/" "$conf" && rm -f "${conf}.bak"
+    fi
+
     sphinx-build -b latex -c . src build/pdf && \
-    cd build/pdf && \
-    latexmk -xelatex clustercontrol.tex && \
-    cd -
+    ( cd build/pdf && latexmk -xelatex clustercontrol.tex ) || rc=$?
+
+    # restore the original conf.py, even if the build failed
+    if [ -n "$backup" ]; then
+        cp "$backup" "$conf" && rm -f "$backup"
+    fi
+
+    cd - >/dev/null
+    return $rc
 }
 
 alias cc_cd_mkdocs='cd ${CC_MKDOCS_DOCS_DIR}/../'
